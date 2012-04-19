@@ -41,9 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Registrar.cs" />
+    <Compile Include="Registration\ConcreteRegistration.cs" />
+    <Compile Include="Registration\ConstructedRegistration.cs" />
+    <Compile Include="Registration\FactoryRegistration.cs" />
+    <Compile Include="Registration\ObjectRegistration.cs" />
+    <Compile Include="Registration\Registrar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resolver.cs" />
+    <Compile Include="Resolution\Resolver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
