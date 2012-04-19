@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System;
 using NUnit.Framework;
 
 namespace Ioc.Tests.Unit
@@ -23,7 +23,7 @@ namespace Ioc.Tests.Unit
 
             var registrations = _container.Registrations;
 
-            Assert.That(registrations.Any(x => x.Value == registeredObject), Is.True, "concrete has not been registered");   
+            Assert.That(registrations.ContainsValue(registeredObject), Is.True, "concrete has not been registered");   
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Ioc.Tests.Unit
 
             var registrations = _container.Registrations;
 
-            Assert.That(registrations.Any(x => x.Key == typeof(ITest)), Is.True, "interface has not been registered");   
+            Assert.That(registrations.ContainsKey(typeof(ITest)), Is.True, "interface has not been registered");   
         }
 
         [Test]
@@ -52,6 +52,31 @@ namespace Ioc.Tests.Unit
         public void Registering_a_concrete_that_is_not_a_type_of_parent_should_throw_invalidargument()
         {
             Assert.That(() => _container.Satisfy<ITest>().With("someStringThatIsNotTypeOfIInterface"), Throws.ArgumentException, "should not be able to register incompatible types");
+        }
+
+        [Test]
+        public void Should_be_able_to_register_a_factory_function()
+        {
+            Func<object> factoryFunction = () => new Test();
+
+            _container.Satisfy<ITest>().With(factoryFunction);
+
+            var registrations = _container.Registrations;
+            Assert.That(registrations.ContainsKey(typeof(ITest)), Is.True, "interface has not been registered");
+            Assert.That(registrations[typeof(ITest)], Is.TypeOf<Func<object>>(), "should have registered a factory function for that interface!");
+        }
+
+        [Test]
+        public void Resolving_a_factory_function_should_get_back_the_same_object_we_registered()
+        {
+            var registeredObject = new Test();
+            Func<object> factoryFunction = () => registeredObject;
+
+            _container.Satisfy<ITest>().With(factoryFunction);
+
+            var resolvedObject = _container.Resolve<ITest>();
+
+            Assert.That(ReferenceEquals(registeredObject, resolvedObject), Is.True, "the 2 object references are not the same");
         }
     }
 

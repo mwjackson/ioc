@@ -29,9 +29,25 @@ namespace Ioc
             return this;
         }
 
+        public Container With(Func<object> factoryFunction)
+        {
+            //if (!_typeKey.IsInstanceOfType(factoryFunction.))
+            //    throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, concrete.GetType()));
+
+            Registrations[_typeKey] = factoryFunction;
+            return this;
+        }
+
         public object Resolve<T>()
         {
-            return Registrations[typeof (T)];
+            var registration = Registrations[typeof (T)];
+            if (registration.GetType() == typeof(Func<object>))
+            {
+                var factoryFunction = registration as Func<object>;
+                return factoryFunction();
+            }
+
+            return registration;
         }
     }
 }
