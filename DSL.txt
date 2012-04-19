@@ -1,0 +1,34 @@
+Configuration
+
+Convention-base scanning
+
+For all IClass, resolve Class
+Resolve all System.Web.MVC.Controller
+For all ctor args called connectionString => look in web.config? named what?
+For all ISession
+
+Explicit Registering
+
+container.Satisfy<ICLass>.With<ConcreteClass>().WhichLivesFor(Lifetime lifetime);
+container.Satisfy<ICLass>.With<ConcreteClass>(new { argument1 = value1, argument2 = value2 });
+container.Satisfy<ICLass>.With<ConcreteClass>().WhereArgument("name").Is("value");
+container.Satisfy<ICLass>.With<ConcreteClass>().WhereArgument("name").IsConfigSetting("settingName");
+container.Satisfy<ICLass>.With<ConcreteClass>().WhereArgument("name").IsConnectionString("settingName");
+container.Satisfy<ICLass>.Via(() => return new ConcreteClass())
+container.Scan(Assembly assembly);
+container.Scan(Assembly assembly).ForAllTypesOf<Controller>();
+container.ScanAssemblyForNHibernateMappings(Assembly assembly);
+container.ScanAssemblyForMvcControllers(Assembly assembly);
+
+Resolving
+
+container.Resolve<IClass>();
+container.ResolveAll<IClass>(); // returns IEnumerable<IClass>()
+
+Design notes
+
+DSL should be idiot-proof... 
+Convention based resolution above all! Explicity specifying a relationship overrides current configuration
+Auto-resolve some arguments? connectionString?
+Non-singleton objects should be disposed of automatically
+Containers should be atomic (and possibly thread-safe?)
