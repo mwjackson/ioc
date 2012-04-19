@@ -3,24 +3,24 @@ using System.Collections.Generic;
 
 namespace Ioc
 {
-    public class Container
+    public class Registrar
     {
-        public Container()
+        public Registrar()
         {
             Registrations = new Dictionary<Type, object>();
         }
 
-        public readonly Dictionary<Type, object> Registrations;
+        public Dictionary<Type, object> Registrations { get; private set; }
         private Type _typeKey;
 
-        public Container Satisfy<T>()
+        public Registrar Satisfy<T>()
         {
             Registrations.Add(typeof(T), null);
             _typeKey = typeof (T);
             return this;
         }
 
-        public Container With(object concrete)
+        public Registrar With(object concrete)
         {
             if (!_typeKey.IsInstanceOfType(concrete))
                 throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, concrete.GetType()));
@@ -29,13 +29,13 @@ namespace Ioc
             return this;
         }
 
-        public Container With<T>()
+        public Registrar With<T>()
         {
             Registrations[_typeKey] = typeof(T);
             return this;
         }
 
-        public Container With<T>(Func<T> factoryFunction)
+        public Registrar With<T>(Func<T> factoryFunction)
         {
             if (!_typeKey.IsAssignableFrom(typeof(T)))
                 throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, typeof(T)));
@@ -44,23 +44,6 @@ namespace Ioc
             return this;
         }
 
-        public T Resolve<T>()
-        {
-            var registration = Registrations[typeof (T)];
 
-            if (registration.GetType() == typeof(Type))
-            {
-                var type = registration as Type;
-                return (T) Activator.CreateInstance(type);
-            }
-
-            if (registration.GetType() == typeof(Func<T>))
-            {
-                var factoryFunction = registration as Func<T>;
-                return factoryFunction();
-            }
-
-            return (T) registration;
-        }
     }
 }
