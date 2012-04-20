@@ -7,15 +7,14 @@ namespace Ioc.Registration
     {
         public Registrar()
         {
-            Registrations = new Dictionary<Type, ObjectRegistration>();
+            Registrations = new List<ObjectRegistration>();
         }
 
-        public Dictionary<Type, ObjectRegistration> Registrations { get; private set; }
+        public List<ObjectRegistration> Registrations { get; private set; }
         private Type _typeKey;
 
         public Registrar Satisfy<T>()
         {
-            Registrations.Add(typeof(T), null);
             _typeKey = typeof (T);
             return this;
         }
@@ -25,13 +24,13 @@ namespace Ioc.Registration
             if (!_typeKey.IsInstanceOfType(concrete))
                 throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, concrete.GetType()));
             
-            Registrations[_typeKey] = new ConcreteRegistration(_typeKey, concrete);
+            Registrations.Add(new ConcreteRegistration(_typeKey, concrete));
             return this;
         }
 
         public Registrar With<T>()
         {
-            Registrations[_typeKey] = new ConstructedRegistration<T>(_typeKey);
+            Registrations.Add(new ConstructedRegistration<T>(_typeKey));
             return this;
         }
 
@@ -41,12 +40,12 @@ namespace Ioc.Registration
             return this;
         }
 
-        public Registrar With(Func<object> factoryFunction)
+        public Registrar With<T>(Func<T> factoryFunction)
         {
-            //if (!_typeKey.IsAssignableFrom(typeof(factoryFunction.)))
+            //if (!_typeKey.IsAssignableFrom(typeof(T)))
             //    throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, typeof(T)));
 
-            Registrations[_typeKey] = new FactoryRegistration(_typeKey, factoryFunction);
+            Registrations.Add(new FactoryRegistration<T>(_typeKey, factoryFunction));
             return this;
         }
     }
