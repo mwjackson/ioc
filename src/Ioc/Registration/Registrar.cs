@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Ioc.Registration
 {
@@ -21,32 +23,44 @@ namespace Ioc.Registration
 
         public Registrar With<T>(T concrete)
         {
-            if (!_typeKey.IsInstanceOfType(concrete))
-                throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, concrete.GetType()));
-            
+            ValidateRegistration(_typeKey, typeof(T));
+
             Registrations.Add(new ConcreteRegistration(_typeKey, concrete));
             return this;
         }
 
         public Registrar With<T>()
         {
+            ValidateRegistration(_typeKey, typeof(T));
+
             Registrations.Add(new ConstructedRegistration<T>(_typeKey));
             return this;
         }
 
         public Registrar With<T>(dynamic explicitArguments)
         {
-            
+            ValidateRegistration(_typeKey, typeof(T));
+
+            var properties = (PropertyInfo[]) explicitArguments.GetType().GetProperties();
+
+            var arguments = properties.ToDictionary(k => k.Name, v => v.GetValue(explicitArguments, null));
+
+            Registrations.Add(new ConstructedRegistration<T>(_typeKey, arguments));
             return this;
         }
 
         public Registrar With<T>(Func<T> factoryFunction)
         {
-            //if (!_typeKey.IsAssignableFrom(typeof(T)))
-            //    throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", _typeKey, typeof(T)));
+            ValidateRegistration(_typeKey, typeof (T));
 
             Registrations.Add(new FactoryRegistration<T>(_typeKey, factoryFunction));
             return this;
+        }
+
+        private void ValidateRegistration(Type ofType, Type byType)
+        {
+            if (!ofType.IsAssignableFrom(byType))
+                throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", ofType, byType));
         }
     }
 }

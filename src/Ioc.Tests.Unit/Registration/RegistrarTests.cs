@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Ioc.Registration;
 using NUnit.Framework;
@@ -67,16 +68,27 @@ namespace Ioc.Tests.Unit.Registration
         }
 
         [Test]
+        public void Registering_a_type_that_is_not_a_type_of_parent_should_throw_invalidargument()
+        {
+            Assert.That(() => _registrar.Satisfy<ITest>().With<string>(), Throws.ArgumentException, "should not be able to register incompatible types");
+        }
+        
+        [Test]
         public void Registering_a_type_with_ctor_args_should_take_argument_list ()
         {
-            Assert.Fail("pending");
-
-            var arguments = new {Arg1 = "arg1", Arg2 = "arg"};
+            var arguments = new {Arg1 = "arg1", Arg2 = "arg2"};
             _registrar.Satisfy<ITest>().With<Test>(arguments);
 
-            //var registration = _registrar.Registrations.First();
-            //Assert.That(registration.Key, Is.EqualTo(typeof(ITest)), "interface has not been registered");
-            //Assert.That((registration.Value as ConstructedRegistration<ITest>).Arguments, Is.EqualTo(arguments));
+            var registration = _registrar.Registrations.First();
+            Assert.That(registration.ForType, Is.EqualTo(typeof(ITest)), "interface has not been registered");
+            var expectedArguments = new Dictionary<string, object> {{"Arg1", "arg1"}, {"Arg2", "arg2"}};
+            Assert.That((registration as ConstructedRegistration<Test>).Arguments, Is.EqualTo(expectedArguments));
+        }
+
+        [Test]
+        public void Registering_a_type_with_arguments_that_is_not_a_type_of_parent_should_throw_invalidargument()
+        {
+            Assert.That(() => _registrar.Satisfy<ITest>().With<string>(new { Arg1 = "someArgument"}), Throws.ArgumentException, "should not be able to register incompatible types");
         }
 
     }
