@@ -29,6 +29,6 @@ Design notes
 
 DSL should be idiot-proof... 
 Convention based resolution above all! Explicity specifying a relationship overrides current configuration
-Auto-resolve some arguments? connectionString?
+Auto-resolve some arguments? connectionString? (if an argument is a string, look in web.config connectionStrings, appSettings for that name)
 Non-singleton objects should be disposed of automatically
 Containers should be atomic (and possibly thread-safe?)

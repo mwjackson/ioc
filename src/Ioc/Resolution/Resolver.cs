@@ -23,8 +23,12 @@ namespace Ioc.Resolution
 
             if (registration is ConstructedRegistration<T>)
             {
-                var type = (registration as ConstructedRegistration<T>).ByType;
-                return (T) Activator.CreateInstance(type);
+                var constructedRegistration = (registration as ConstructedRegistration<T>);
+                var greediestCtor = constructedRegistration.ByType.GetConstructors()
+                    .OrderByDescending(ctor => ctor.GetParameters().Length)
+                    .First();
+                var parameters = constructedRegistration.Arguments.Select(x => x.Value).ToArray();
+                return (T) greediestCtor.Invoke(parameters);
             }
 
             if (registration is ConcreteRegistration)
