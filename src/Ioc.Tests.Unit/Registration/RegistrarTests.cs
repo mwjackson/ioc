@@ -82,7 +82,7 @@ namespace Ioc.Tests.Unit.Registration
             var registration = _registrar.Registrations.First();
             Assert.That(registration.ForType, Is.EqualTo(typeof(ITest)), "interface has not been registered");
             var expectedArguments = new Dictionary<string, object> {{"Arg1", "arg1"}, {"Arg2", "arg2"}};
-            Assert.That((registration as ConstructedRegistration<Test>).Arguments, Is.EqualTo(expectedArguments));
+            Assert.That((registration as ConstructedRegistration<Test>).Parameters, Is.EqualTo(expectedArguments));
         }
 
         [Test]

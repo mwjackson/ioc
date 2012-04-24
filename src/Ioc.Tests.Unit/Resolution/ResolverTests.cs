@@ -58,17 +58,35 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolve_an_object_with_arguments_of_same_type_but_different_names_should_set_them_in_the_right_order()
         {
-            string argument1 = "someArgument";
-            decimal argument2 = 1234m;
-            string argument3 = "anotherArgument";
+            string arg1 = "someArgument";
+            decimal arg2 = 1234m;
+            string arg3 = "anotherArgument";
 
-            var registrar = new Registrar().Satisfy<ClassWithArguments>().With<ClassWithArguments>(new { Argument3 = argument3, Argument1 = argument1, Argument2 = argument2 });
+            var registrar = new Registrar().Satisfy<ClassWithArguments>().With<ClassWithArguments>(new { argument3 = arg3, argument1 = arg1, argument2 = arg2 });
 
             var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithArguments>();
 
-            Assert.That(ReferenceEquals(resolvedObject.Argument1, argument1), Is.True, "expected argument 1 to be set");
-            Assert.That(resolvedObject.Argument2, Is.EqualTo(argument2), "expected argument 2 to be set");
-            Assert.That(ReferenceEquals(resolvedObject.Argument3, argument3), Is.True, "expected argument 3 to be set");
+            Assert.That(ReferenceEquals(resolvedObject.Argument1, arg1), Is.True, "expected argument 1 to be set");
+            Assert.That(resolvedObject.Argument2, Is.EqualTo(arg2), "expected argument 2 to be set");
+            Assert.That(ReferenceEquals(resolvedObject.Argument3, arg3), Is.True, "expected argument 3 to be set");
+        }
+
+        [Test]
+        public void Resolving_an_object_with_names_in_different_case_to_ctor_should_still_set_them_correctly()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test]
+        public void Resolving_an_object_with_arguments_missing_should_throw_argumentexception()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test]
+        public void Resolving_an_object_with_argument_of_type_that_has_been_registered_should_resolve_that_type_also()
+        {
+            Assert.Fail("pending");
         }
     }
 

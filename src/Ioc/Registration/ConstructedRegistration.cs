@@ -8,17 +8,17 @@ namespace Ioc.Registration
         public ConstructedRegistration(Type forType) : base(forType)
         {
             ByType = typeof (T);
-            Arguments = new Dictionary<string, object>();
+            Parameters = new Dictionary<string, object>();
         }
 
         public ConstructedRegistration(Type forType, Dictionary<string, object> arguments)
             : base(forType)
         {
             ByType = typeof(T);
-            Arguments = arguments;
+            Parameters = arguments;
         }
 
         public Type ByType { get; private set; }
-        public Dictionary<string, object> Arguments { get; private set; } 
+        public Dictionary<string, object> Parameters { get; private set; } 
     }
 }

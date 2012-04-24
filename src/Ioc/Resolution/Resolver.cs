@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Ioc.Registration;
 
 namespace Ioc.Resolution
@@ -23,12 +24,7 @@ namespace Ioc.Resolution
 
             if (registration is ConstructedRegistration<T>)
             {
-                var constructedRegistration = (registration as ConstructedRegistration<T>);
-                var greediestCtor = constructedRegistration.ByType.GetConstructors()
-                    .OrderByDescending(ctor => ctor.GetParameters().Length)
-                    .First();
-                var parameters = constructedRegistration.Arguments.Select(x => x.Value).ToArray();
-                return (T) greediestCtor.Invoke(parameters);
+                return ConstructObject<T>(registration);
             }
 
             if (registration is ConcreteRegistration)
@@ -37,7 +33,26 @@ namespace Ioc.Resolution
             }
 
             var factoryRegistration = registration as IFactoryRegistration<T>;
-            return (T) factoryRegistration.FactoryFunction();
+            return factoryRegistration.FactoryFunction();
+        }
+
+        private static T ConstructObject<T>(ObjectRegistration registration)
+        {
+            var constructedRegistration = (registration as ConstructedRegistration<T>);
+            var greediestCtor = constructedRegistration.ByType.GetConstructors()
+                .OrderByDescending(ctor => ctor.GetParameters().Length)
+                .First();
+            var requiredParameters = greediestCtor.GetParameters().ToDictionary(pi => pi.Name, pi => new object());
+            MatchParams(requiredParameters, constructedRegistration.Parameters);
+            return (T)greediestCtor.Invoke(requiredParameters.Select(x => x.Value).ToArray());
+        }
+
+        private static void MatchParams(Dictionary<string, object> requiredParameters, Dictionary<string, object> suppliedParameters)
+        {
+            foreach (var key in requiredParameters.Keys.ToList())
+            {
+                requiredParameters[key] = suppliedParameters[key];
+            }
         }
     }
 }
