@@ -47,9 +47,9 @@ namespace Ioc.Tests.Unit.Resolution
             string argument1 = "someArgument";
             decimal argument2 = 1234m;
 
-            var registrar = new Registrar().Satisfy<ClassWithArguments>().With<ClassWithArguments>(new { Argument1 = argument1, Argument2 = argument2, Argument3 = ""});
+            var registrar = new Registrar().Satisfy<ClassWithThreeArguments>().With<ClassWithThreeArguments>(new { Argument1 = argument1, Argument2 = argument2, Argument3 = ""});
 
-            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithArguments>();
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithThreeArguments>();
 
             Assert.That(ReferenceEquals(resolvedObject.Argument1, argument1), Is.True, "expected argument 1 to be set");
             Assert.That(resolvedObject.Argument2, Is.EqualTo(argument2), "expected argument 2 to be set");
@@ -62,9 +62,9 @@ namespace Ioc.Tests.Unit.Resolution
             decimal arg2 = 1234m;
             string arg3 = "anotherArgument";
 
-            var registrar = new Registrar().Satisfy<ClassWithArguments>().With<ClassWithArguments>(new { argument3 = arg3, argument1 = arg1, argument2 = arg2 });
+            var registrar = new Registrar().Satisfy<ClassWithThreeArguments>().With<ClassWithThreeArguments>(new { argument3 = arg3, argument1 = arg1, argument2 = arg2 });
 
-            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithArguments>();
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithThreeArguments>();
 
             Assert.That(ReferenceEquals(resolvedObject.Argument1, arg1), Is.True, "expected argument 1 to be set");
             Assert.That(resolvedObject.Argument2, Is.EqualTo(arg2), "expected argument 2 to be set");
@@ -74,13 +74,24 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolving_an_object_with_names_in_different_case_to_ctor_should_still_set_them_correctly()
         {
-            Assert.Fail("pending");
+            string arg1 = "someArgument";
+
+            var registrar = new Registrar().Satisfy<ClassWithOneArgument>().With<ClassWithOneArgument>(new { ARGUMENT1 = arg1 });
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithOneArgument>();
+
+            Assert.That(ReferenceEquals(resolvedObject.Argument1, arg1), Is.True, "expected argument 1 to be set");
         }
 
         [Test]
         public void Resolving_an_object_with_arguments_missing_should_throw_argumentexception()
         {
-            Assert.Fail("pending");
+            string arg3 = "anotherArgument";
+
+            var registrar = new Registrar().Satisfy<ClassWithThreeArguments>().With<ClassWithThreeArguments>(new { argument3 = arg3});
+
+            Assert.That(() => new Resolver(registrar.Registrations).Resolve<ClassWithThreeArguments>(),
+                Throws.ArgumentException.With.Message.EqualTo("Missing parameters: argument1 argument2"));
         }
 
         [Test]
@@ -90,9 +101,19 @@ namespace Ioc.Tests.Unit.Resolution
         }
     }
 
-    public class ClassWithArguments
+    public class ClassWithOneArgument
     {
-        public ClassWithArguments(string argument1, decimal argument2, string argument3)
+        public ClassWithOneArgument(string argument1)
+        {
+            Argument1 = argument1;
+        }
+
+        public string Argument1 { get; private set; }
+    }
+
+    public class ClassWithThreeArguments
+    {
+        public ClassWithThreeArguments(string argument1, decimal argument2, string argument3)
         {
             Argument1 = argument1;
             Argument2 = argument2;
