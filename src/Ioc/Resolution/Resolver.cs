@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Ioc.Registration;
 
 namespace Ioc.Resolution
@@ -22,7 +21,7 @@ namespace Ioc.Resolution
 
             var registration = Registrations.First(r => r.ForType == typeof(T));
 
-            if (registration is ConstructedRegistration<T>)
+            if (registration is IConstructedRegistration<T>)
             {
                 return ConstructObject<T>(registration);
             }
@@ -38,7 +37,7 @@ namespace Ioc.Resolution
 
         private static T ConstructObject<T>(ObjectRegistration registration)
         {
-            var constructedRegistration = (registration as ConstructedRegistration<T>);
+            var constructedRegistration = (registration as IConstructedRegistration<T>);
             var greediestCtor = constructedRegistration.ByType.GetConstructors()
                 .OrderByDescending(ctor => ctor.GetParameters().Length)
                 .First();

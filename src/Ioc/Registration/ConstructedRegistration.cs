@@ -3,7 +3,13 @@ using System.Collections.Generic;
 
 namespace Ioc.Registration
 {
-    public class ConstructedRegistration<T> : ObjectRegistration
+    public interface IConstructedRegistration<out T>
+    {
+        Type ByType { get; }
+        Dictionary<string, object> Parameters { get;} 
+    }
+
+    public class ConstructedRegistration<T> : ObjectRegistration, IConstructedRegistration<T>
     {
         public ConstructedRegistration(Type forType) : base(forType)
         {
@@ -19,6 +25,6 @@ namespace Ioc.Registration
         }
 
         public Type ByType { get; private set; }
-        public Dictionary<string, object> Parameters { get; private set; } 
+        public Dictionary<string, object> Parameters { get; private set; }
     }
 }

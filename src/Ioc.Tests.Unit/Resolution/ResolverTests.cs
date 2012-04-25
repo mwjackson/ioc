@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Ioc.Registration;
 using Ioc.Resolution;
-using Ioc.Tests.Unit.Registration;
 using NUnit.Framework;
 
 namespace Ioc.Tests.Unit.Resolution
@@ -19,11 +18,11 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolving_an_existing_object_should_get_the_same_object_back_that_we_registered()
         {
-            var registeredObject = new Test();
+            var registeredObject = new ClassWithNoArguments();
 
-            var registrar = new Registrar().Satisfy<ITest>().With(registeredObject);
+            var registrar = new Registrar().Satisfy<IClass>().With(registeredObject);
 
-            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ITest>();
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<IClass>();
 
             Assert.That(ReferenceEquals(registeredObject, resolvedObject), Is.True, "the 2 object references are not the same");
         }
@@ -31,14 +30,24 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolving_a_factory_function_should_get_back_the_same_object_we_registered()
         {
-            var registeredObject = new Test();
-            Func<Test> factoryFunction = () => registeredObject;
+            var registeredObject = new ClassWithNoArguments();
+            Func<IClass> factoryFunction = () => registeredObject;
 
-            var registrar = new Registrar().Satisfy<ITest>().With(factoryFunction);
+            var registrar = new Registrar().Satisfy<IClass>().With(factoryFunction);
 
-            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ITest>();
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<IClass>();
 
             Assert.That(ReferenceEquals(registeredObject, resolvedObject), Is.True, "the 2 object references are not the same");
+        }
+
+        [Test]
+        public void Resolving_an_object_that_needs_be_be_constructed_should_return_an_instance_of_that_type()
+        {
+            var registrar = new Registrar().Satisfy<IClass>().With<ClassWithNoArguments>();
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<IClass>();
+
+            Assert.That(resolvedObject, Is.InstanceOf<ClassWithNoArguments>(), "expected resolved object to be of type ClassWithNoArguments");
         }
 
         [Test]
@@ -97,11 +106,28 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolving_an_object_with_argument_of_type_that_has_been_registered_should_resolve_that_type_also()
         {
-            Assert.Fail("pending");
+            var dependency = new ClassWithNoArguments();
+            var registrar = new Registrar().Satisfy<ClassWithSingleDependency>().With<ClassWithSingleDependency>()
+                .Satisfy<ClassWithNoArguments>().With(dependency);
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithSingleDependency>();
+
+            Assert.That(resolvedObject, Is.InstanceOf<ClassWithSingleDependency>(), "expected resolved object to be of type ClassWithSingleDependency");
+            Assert.That(resolvedObject.Argument1, Is.EqualTo(dependency), "expected dependency to have been resolved also");
         }
     }
 
-    public class ClassWithOneArgument
+    public interface IClass
+    {
+        
+    }
+
+    public class ClassWithNoArguments : IClass
+    {
+        
+    }
+
+    public class ClassWithOneArgument : IClass
     {
         public ClassWithOneArgument(string argument1)
         {
@@ -111,7 +137,7 @@ namespace Ioc.Tests.Unit.Resolution
         public string Argument1 { get; private set; }
     }
 
-    public class ClassWithThreeArguments
+    public class ClassWithThreeArguments : IClass
     {
         public ClassWithThreeArguments(string argument1, decimal argument2, string argument3)
         {
@@ -123,5 +149,15 @@ namespace Ioc.Tests.Unit.Resolution
         public string Argument1 { get; private set; }
         public decimal Argument2 { get; private set; }
         public string Argument3 { get; private set; }
+    }
+
+    public class ClassWithSingleDependency : IClass
+    {
+        public ClassWithNoArguments Argument1 { get; set; }
+
+        public ClassWithSingleDependency(ClassWithNoArguments argument1)
+        {
+            Argument1 = argument1;
+        }
     }
 }
