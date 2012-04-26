@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Ioc.Registration;
 
 namespace Ioc.Resolution
@@ -35,46 +36,70 @@ namespace Ioc.Resolution
             return factoryRegistration.FactoryFunction();
         }
 
-        private static T ConstructObject<T>(ObjectRegistration registration)
+        private T ConstructObject<T>(ObjectRegistration registration)
         {
             var constructedRegistration = (registration as IConstructedRegistration<T>);
             var greediestCtor = constructedRegistration.ByType.GetConstructors()
                 .OrderByDescending(ctor => ctor.GetParameters().Length)
                 .First();
-            var requiredParameters = greediestCtor.GetParameters().ToDictionary(pi => pi.Name.ToLower(), pi => new object());
+            var requiredParameters = greediestCtor.GetParameters().ToDictionary(pi => pi.Name.ToLower(), pi => new Parameter(pi));
             var suppliedParameters = constructedRegistration.Parameters;
-            MatchParams(requiredParameters, suppliedParameters);
-            return (T)greediestCtor.Invoke(requiredParameters.Select(x => x.Value).ToArray());
+            MatchSuppliedParams(requiredParameters, suppliedParameters);
+            AttemptToResolveMissingParams(requiredParameters);
+            CheckForAllParameters(requiredParameters);
+            return (T) greediestCtor.Invoke(requiredParameters.Select(x => x.Value.ParameterValue).ToArray());
         }
 
-        private static void MatchParams(Dictionary<string, object> requiredParameters, Dictionary<string, object> suppliedParameters)
+        private static void MatchSuppliedParams(Dictionary<string, Parameter> requiredParameters, Dictionary<string, object> suppliedParameters)
         {
-            if (requiredParameters.Count() > suppliedParameters.Count())
-            {
-                var missingArguments = requiredParameters.Except(suppliedParameters, new ArgumentComparer()).Select(x => x.Key).ToArray();
-                throw new ArgumentException(string.Format("Missing parameters: {0}", string.Join(" ", missingArguments)));
-            }
-
             foreach (var paramKey in suppliedParameters.Keys.ToList())
             {
-                requiredParameters[paramKey.ToLower()] = suppliedParameters[paramKey];
+                requiredParameters[paramKey.ToLower()].ParameterValue = suppliedParameters[paramKey];
             }
         }
-    }
 
-    internal class ArgumentComparer : IEqualityComparer<KeyValuePair<string, object>>
-    {
-        public bool Equals(KeyValuePair<string, object> argumentX, KeyValuePair<string, object> argumentY)
+        private void AttemptToResolveMissingParams(Dictionary<string, Parameter> requiredParameters)
         {
-            return argumentX.Key == argumentY.Key;
-        }
-
-        public int GetHashCode(KeyValuePair<string, object> argument)
-        {
-            unchecked
+            var stillToResolve = requiredParameters.Where(x => x.Value.ParameterValue is NullParameter).Select(x => x.Key).ToArray();
+            foreach(var paramKey in stillToResolve)
             {
-                return ((argument.Key != null ? argument.Key.GetHashCode() : 0) * 397);
+                var type = requiredParameters[paramKey].Type;
+                if (type.IsValueType || type == typeof(string)) continue;
+                requiredParameters[paramKey].ParameterValue = ResolveInternal(type);
             }
+        }
+
+        private object ResolveInternal(Type type)
+        {
+            MethodInfo method = GetType().GetMethod("Resolve");
+            return method.MakeGenericMethod(type).Invoke(this, null);
+        }
+
+        private static void CheckForAllParameters(Dictionary<string, Parameter> requiredParameters)
+        {
+            if (requiredParameters.Any(x => x.Value.ParameterValue is NullParameter))
+            {
+                var missingArguments = requiredParameters.Where(x => x.Value.ParameterValue is NullParameter).Select(x => x.Key).ToArray();
+                throw new ArgumentException(string.Format("Missing parameters: {0}", string.Join(" ", missingArguments)));
+            }
+        }
+
+        private class NullParameter
+        {
+        }
+
+        private class Parameter
+        {
+            public Parameter(ParameterInfo parameterInfo)
+            {
+                ParameterValue = new NullParameter();
+                Type = parameterInfo.ParameterType;
+                Position = parameterInfo.Position;
+            }
+
+            public object ParameterValue { get; set; }
+            public Type Type { get; set; }
+            public int Position { get; set; }
         }
     }
 }
