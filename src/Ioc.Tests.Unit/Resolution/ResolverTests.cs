@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using Ioc.Registration;
 using Ioc.Resolution;
 using NUnit.Framework;
@@ -115,6 +116,56 @@ namespace Ioc.Tests.Unit.Resolution
             Assert.That(resolvedObject, Is.InstanceOf<ClassWithSingleDependency>(), "expected resolved object to be of type ClassWithSingleDependency");
             Assert.That(resolvedObject.Argument1, Is.EqualTo(dependency), "expected dependency to have been resolved also");
         }
+
+        [Test]
+        public void Resolving_an_object_with_string_parameter_not_supplied_should_resolve_it_from_connection_strings()
+        {
+            var registrar = new Registrar().Satisfy<ClassWithConnectionStringArgument>().With<ClassWithConnectionStringArgument>();
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithConnectionStringArgument>();
+            
+            Assert.That(resolvedObject.ConnString, Is.EqualTo(ConfigurationManager.ConnectionStrings["connectionString"].ConnectionString));
+        }
+
+        [Test]
+        public void Resolving_an_object_with_string_parameter_not_supplied_should_resolve_it_from_app_settings()
+        {
+            var registrar = new Registrar().Satisfy<ClassWithAppSettingArgument>().With<ClassWithAppSettingArgument>();
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithAppSettingArgument>();
+
+            Assert.That(resolvedObject.WebServiceUrl, Is.EqualTo(ConfigurationManager.AppSettings["webServiceUrl"]));
+        }
+
+        [Test, Ignore]
+        public void Resolving_an_object_with_string_parameter_that_exists_in_connstrings_and_appsettings_should_report_error()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test, Ignore]
+        public void Resolving_an_object_with_int_parameter_not_supplied_should_resolve_it_from_app_settings()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test, Ignore]
+        public void Resolving_an_object_with_double_parameter_not_supplied_should_resolve_it_from_app_settings()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test, Ignore]
+        public void Resolving_a_object_should_be_a_transient_by_default()
+        {
+            Assert.Fail("pending");
+        }
+
+        [Test, Ignore]
+        public void Resolving_a_object_with_singleton_lifetime_should_resolve_same_reference_twice()
+        {
+            Assert.Fail("pending");
+        }
     }
 
     public interface IClass
@@ -135,6 +186,26 @@ namespace Ioc.Tests.Unit.Resolution
         }
 
         public string Argument1 { get; private set; }
+    }
+
+    public class ClassWithConnectionStringArgument : IClass
+    {
+        public ClassWithConnectionStringArgument(string connectionString)
+        {
+            ConnString = connectionString;
+        }
+
+        public string ConnString { get; private set; }
+    }
+
+    public class ClassWithAppSettingArgument : IClass
+    {
+        public ClassWithAppSettingArgument(string webServiceUrl)
+        {
+            WebServiceUrl = webServiceUrl;
+        }
+
+        public string WebServiceUrl { get; private set; }
     }
 
     public class ClassWithThreeArguments : IClass

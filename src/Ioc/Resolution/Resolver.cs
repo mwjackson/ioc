@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using Ioc.Registration;
@@ -22,18 +23,18 @@ namespace Ioc.Resolution
 
             var registration = Registrations.First(r => r.ForType == typeof(T));
 
-            if (registration is IConstructedRegistration<T>)
-            {
-                return ConstructObject<T>(registration);
-            }
-
             if (registration is ConcreteRegistration)
             {
                 return (T)(registration as ConcreteRegistration).Concrete;
             }
 
-            var factoryRegistration = registration as IFactoryRegistration<T>;
-            return factoryRegistration.FactoryFunction();
+            if (registration is IFactoryRegistration<T>)
+            {
+                var factoryRegistration = registration as IFactoryRegistration<T>;
+                return factoryRegistration.FactoryFunction();
+            }
+
+            return ConstructObject<T>(registration);
         }
 
         private T ConstructObject<T>(ObjectRegistration registration)
@@ -46,6 +47,7 @@ namespace Ioc.Resolution
             var suppliedParameters = constructedRegistration.Parameters;
             MatchSuppliedParams(requiredParameters, suppliedParameters);
             AttemptToResolveMissingParams(requiredParameters);
+            AttemptToResolveValueTypesFromConfigurationFiles(requiredParameters);
             CheckForAllParameters(requiredParameters);
             return (T) greediestCtor.Invoke(requiredParameters.Select(x => x.Value.ParameterValue).ToArray());
         }
@@ -55,6 +57,26 @@ namespace Ioc.Resolution
             foreach (var paramKey in suppliedParameters.Keys.ToList())
             {
                 requiredParameters[paramKey.ToLower()].ParameterValue = suppliedParameters[paramKey];
+            }
+        }
+
+        private void AttemptToResolveValueTypesFromConfigurationFiles(Dictionary<string, Parameter> requiredParameters)
+        {
+            var stillToResolve = requiredParameters.Where(x => x.Value.ParameterValue is NullParameter).Select(x => x.Key).ToArray();
+            foreach (var paramKey in stillToResolve)
+            {
+                var type = requiredParameters[paramKey].Type;
+                if (!type.IsValueType && type != typeof(string)) continue;
+
+                if (ConfigurationManager.AppSettings.AllKeys.Select(x => x.ToLower()).Contains(paramKey))
+                {
+                    requiredParameters[paramKey].ParameterValue = ConfigurationManager.AppSettings[paramKey];
+                    continue;
+                }
+
+                var connectionStringSettingses = ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>();
+                if (connectionStringSettingses.Any(x => x.Name.ToLower() == paramKey))
+                    requiredParameters[paramKey].ParameterValue = connectionStringSettingses.First(x => x.Name.ToLower() == paramKey).ConnectionString;
             }
         }
 
@@ -84,10 +106,6 @@ namespace Ioc.Resolution
             }
         }
 
-        private class NullParameter
-        {
-        }
-
         private class Parameter
         {
             public Parameter(ParameterInfo parameterInfo)
@@ -100,6 +118,10 @@ namespace Ioc.Resolution
             public object ParameterValue { get; set; }
             public Type Type { get; set; }
             public int Position { get; set; }
+        }
+
+        private class NullParameter
+        {
         }
     }
 }
