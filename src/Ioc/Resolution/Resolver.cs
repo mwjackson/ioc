@@ -68,15 +68,21 @@ namespace Ioc.Resolution
                 var type = requiredParameters[paramKey].Type;
                 if (!type.IsValueType && type != typeof(string)) continue;
 
-                if (ConfigurationManager.AppSettings.AllKeys.Select(x => x.ToLower()).Contains(paramKey))
+                var connectionStrings = ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>();
+                var appSettings = ConfigurationManager.AppSettings.AllKeys;
+
+                if (appSettings.Any(x => x.ToLower() == paramKey) && connectionStrings.Any(x => x.Name.ToLower() == paramKey))
+                    throw new ArgumentException(string.Format("Duplicated setting name! {0} exists as both a connection string and application setting.", paramKey));
+                
+                if (appSettings.Select(x => x.ToLower()).Contains(paramKey))
                 {
-                    requiredParameters[paramKey].ParameterValue = ConfigurationManager.AppSettings[paramKey];
+                    var parameterValueFromAppSettings = Convert.ChangeType(ConfigurationManager.AppSettings[paramKey], requiredParameters[paramKey].Type);
+                    requiredParameters[paramKey].ParameterValue = parameterValueFromAppSettings;
                     continue;
                 }
 
-                var connectionStringSettingses = ConfigurationManager.ConnectionStrings.Cast<ConnectionStringSettings>();
-                if (connectionStringSettingses.Any(x => x.Name.ToLower() == paramKey))
-                    requiredParameters[paramKey].ParameterValue = connectionStringSettingses.First(x => x.Name.ToLower() == paramKey).ConnectionString;
+                if (connectionStrings.Any(x => x.Name.ToLower() == paramKey))
+                    requiredParameters[paramKey].ParameterValue = connectionStrings.First(x => x.Name.ToLower() == paramKey).ConnectionString;
             }
         }
 

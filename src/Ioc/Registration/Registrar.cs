@@ -62,5 +62,15 @@ namespace Ioc.Registration
             if (!ofType.IsAssignableFrom(byType))
                 throw new ArgumentException(string.Format("Cannot satisy {0} with {1} - types are not compatible.", ofType, byType));
         }
+
+        public Registrar For(Lifetime lifetime)
+        {
+            return this;
+        }
+    }
+
+    public enum Lifetime
+    {
+        Singleton
     }
 }

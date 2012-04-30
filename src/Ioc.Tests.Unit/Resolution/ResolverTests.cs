@@ -130,39 +130,62 @@ namespace Ioc.Tests.Unit.Resolution
         [Test]
         public void Resolving_an_object_with_string_parameter_not_supplied_should_resolve_it_from_app_settings()
         {
-            var registrar = new Registrar().Satisfy<ClassWithAppSettingArgument>().With<ClassWithAppSettingArgument>();
+            var registrar = new Registrar().Satisfy<ClassWithAppSettingStringArgument>().With<ClassWithAppSettingStringArgument>();
 
-            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithAppSettingArgument>();
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithAppSettingStringArgument>();
 
             Assert.That(resolvedObject.WebServiceUrl, Is.EqualTo(ConfigurationManager.AppSettings["webServiceUrl"]));
         }
 
-        [Test, Ignore]
+        [Test]
         public void Resolving_an_object_with_string_parameter_that_exists_in_connstrings_and_appsettings_should_report_error()
         {
-            Assert.Fail("pending");
+            var registrar = new Registrar().Satisfy<ClassWithDuplicatedSettingArgument>().With<ClassWithDuplicatedSettingArgument>();
+
+            Assert.That(() => new Resolver(registrar.Registrations).Resolve<ClassWithDuplicatedSettingArgument>(),
+                Throws.ArgumentException.With.Message.EqualTo("Duplicated setting name! duplicatedsetting exists as both a connection string and application setting."));
+        }
+
+        [Test]
+        public void Resolving_an_object_with_int_parameter_not_supplied_should_resolve_it_from_app_settings()
+        {
+            var registrar = new Registrar().Satisfy<ClassWithAppSettingIntArgument>().With<ClassWithAppSettingIntArgument>();
+
+            var resolvedObject = new Resolver(registrar.Registrations).Resolve<ClassWithAppSettingIntArgument>();
+
+            Assert.That(resolvedObject.TimeOutInSeconds, Is.EqualTo(int.Parse(ConfigurationManager.AppSettings["timeOutInSeconds"])));
+        }
+
+        [Test]
+        public void Resolving_a_object_should_be_a_transient_by_default()
+        {
+            var registrar = new Registrar().Satisfy<ClassWithNoArguments>().With<ClassWithNoArguments>();
+
+            var firstResolveObject = new Resolver(registrar.Registrations).Resolve<ClassWithNoArguments>();
+            var secondResolveObject = new Resolver(registrar.Registrations).Resolve<ClassWithNoArguments>();
+
+            Assert.That(ReferenceEquals(firstResolveObject, secondResolveObject), Is.False, "Object lifetime should be transient by default!");
+        }
+
+        [Test]
+        public void Resolving_a_object_with_singleton_lifetime_should_resolve_same_reference_twice()
+        {
+            var registrar = new Registrar().Satisfy<ClassWithNoArguments>().With<ClassWithNoArguments>().For(Lifetime.Singleton);
+
+            var firstResolveObject = new Resolver(registrar.Registrations).Resolve<ClassWithNoArguments>();
+            var secondResolveObject = new Resolver(registrar.Registrations).Resolve<ClassWithNoArguments>();
+
+            Assert.That(ReferenceEquals(firstResolveObject, secondResolveObject), Is.True, "Singleton lifetime should resolve to the same object reference!");
         }
 
         [Test, Ignore]
-        public void Resolving_an_object_with_int_parameter_not_supplied_should_resolve_it_from_app_settings()
+        public void Resolving_an_object_with_generic_type_params_should_resolve_that_type_also()
         {
             Assert.Fail("pending");
         }
 
         [Test, Ignore]
         public void Resolving_an_object_with_double_parameter_not_supplied_should_resolve_it_from_app_settings()
-        {
-            Assert.Fail("pending");
-        }
-
-        [Test, Ignore]
-        public void Resolving_a_object_should_be_a_transient_by_default()
-        {
-            Assert.Fail("pending");
-        }
-
-        [Test, Ignore]
-        public void Resolving_a_object_with_singleton_lifetime_should_resolve_same_reference_twice()
         {
             Assert.Fail("pending");
         }
@@ -198,14 +221,31 @@ namespace Ioc.Tests.Unit.Resolution
         public string ConnString { get; private set; }
     }
 
-    public class ClassWithAppSettingArgument : IClass
+    public class ClassWithAppSettingStringArgument : IClass
     {
-        public ClassWithAppSettingArgument(string webServiceUrl)
+        public ClassWithAppSettingStringArgument(string webServiceUrl)
         {
             WebServiceUrl = webServiceUrl;
         }
 
         public string WebServiceUrl { get; private set; }
+    }
+
+    public class ClassWithAppSettingIntArgument : IClass
+    {
+        public ClassWithAppSettingIntArgument(int timeOutInSeconds)
+        {
+            TimeOutInSeconds = timeOutInSeconds;
+        }
+
+        public int TimeOutInSeconds { get; set; }
+    } 
+    
+    public class ClassWithDuplicatedSettingArgument : IClass
+    {
+        public ClassWithDuplicatedSettingArgument(string duplicatedSetting)
+        {
+        }
     }
 
     public class ClassWithThreeArguments : IClass
