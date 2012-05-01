@@ -177,18 +177,6 @@ namespace Ioc.Tests.Unit.Resolution
 
             Assert.That(ReferenceEquals(firstResolveObject, secondResolveObject), Is.True, "Singleton lifetime should resolve to the same object reference!");
         }
-
-        [Test, Ignore]
-        public void Resolving_an_object_with_generic_type_params_should_resolve_that_type_also()
-        {
-            Assert.Fail("pending");
-        }
-
-        [Test, Ignore]
-        public void Resolving_an_object_with_double_parameter_not_supplied_should_resolve_it_from_app_settings()
-        {
-            Assert.Fail("pending");
-        }
     }
 
     public interface IClass

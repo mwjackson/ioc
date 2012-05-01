@@ -21,6 +21,12 @@ namespace Ioc.Registration
             return this;
         }
 
+        public Registrar Satisfy(Type type)
+        {
+            _typeKey = type;
+            return this;
+        }
+
         public Registrar With<T>(T concrete)
         {
             ValidateRegistration(_typeKey, typeof(T));

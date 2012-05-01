@@ -50,6 +50,7 @@
     <Compile Include="Registration\RegistrarTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resolution\ResolverTests.cs" />
+    <Compile Include="Scanning\ScannerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ioc\Ioc.csproj">
